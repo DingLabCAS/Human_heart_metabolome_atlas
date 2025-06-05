@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Heart Region Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <style>
+        #main {
+            width: 2100px;
+            height: 1250px;
+        }
+        #barChart {
+            width: 2100px;
+            height: 180px;
+            margin-bottom: 0px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="barChart"></div>
+    <div id="main"></div>
+</div>
+
+<script>
+
+    const heartRegions = ['IVC','SVC','PA','AA','RCA','LCA','TV','PV',
+        'MV','AV','RA','IAS','LA','RV','IVS','LV']
+
+    async function loadCSV(filename) {
+        return new Promise((resolve, reject) => {
+            Papa.parse(filename, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: (results) => resolve(results.data),
+                error: (error) => reject(error)
+            });
+        });
+    }
+
+    async function createCharts() {
+
+        const allData = {};
+        for (const region of heartRegions) {
+            allData[region] = await loadCSV(`Data/${region}.csv`);
+        }
+
+        const allClusters = new Set();
+        Object.values(allData).forEach(regionData => {
+            regionData.forEach(row => {
+                allClusters.add(row['Cluster name']);
+            });
+        });
+
+        const clusterNames = Array.from(allClusters);
+
+        const barChartData = await loadCSV('Data/BarChartData.csv');
+
+        createBarChart(barChartData, clusterNames);
+
+        createMainChart(allData, clusterNames);
+    }
+
+    function createBarChart(barData, clusterNames) {
+        const chartDom = document.getElementById('barChart');
+        const barChart = echarts.init(chartDom);
+
+        const clusterSizeMap = {};
+        barData.forEach(item => {
+            clusterSizeMap[item['Cluster name']] = parseInt(item['Cluster size'] || 0);
+        });
+
+        const barValues = clusterNames.map(name => clusterSizeMap[name] || 0);
+
+        const specialClusters = [
+            'FA', 'ACar', 'CoA', 'Lyso-PL', 'PA', 'PG', 'PI', 'PC',
+            'PE', 'PS', 'PM', 'HexCer', 'Cer', 'SM', 'BMP',
+            'CE', 'CL', 'FAHFA', 'MG', 'DG', 'TG'
+        ];
+
+        const maxValue = Math.max(...barValues);
+        const visualMax = Math.ceil(maxValue * 0.6);
+
+        const option = {
+
+            backgroundColor: 'transparent',
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow'
+                },
+                formatter: (params) => {
+                    return `${params[0].name}: ${barValues[params[0].dataIndex]}`;
+                }
+            },
+            grid: {
+                left: '5%',
+                right: '25%',
+                top: '10%',
+                bottom: '0%',
+                width: '85%',
+                height: '90%'
+            },
+            xAxis: {
+                type: 'category',
+                data: clusterNames,
+                axisLabel: { show: true},
+                axisLine: { show: true },
+                axisTick: { show: true }
+            },
+            yAxis: {
+                type: 'value',
+                max: visualMax,
+                axisLabel: {
+                    show: false,
+                    color: '#000',
+                    fontFamily: 'calibri',
+                    fontSize: 12
+                },
+                axisLine: { show: false },
+                axisTick: { show: false },
+                splitLine: { show: false, lineStyle: { type: 'dashed' } }
+            },
+
+            series: [{
+                data: barValues,
+                type: 'bar',
+                itemStyle: {
+                    color: function(params) {
+                        const clusterName = clusterNames[params.dataIndex];
+
+                        if (specialClusters.includes(clusterName)) {
+                            return '#dac37f';
+                        } else {
+                            return '#97b380';
+                        }
+                    },
+                    borderColor: '#fff',
+                    borderWidth: 0.5
+                },
+                barWidth: '70%',
+                label: {
+                    show: true,
+                    position: 'top',
+                    formatter: function(params) {
+                        return params.value;
+                    },
+                    fontSize: 14,
+                    color: '#000',
+                    fontFamily: 'calibri'
+                },
+            }]
+        };
+
+        barChart.setOption(option);
+        window.addEventListener('resize', () => barChart.resize());
+    }
+
+    function createMainChart(allData, clusterNames) {
+        const seriesData = [
+            {
+                name: 'Mixed Data',
+                type: 'scatter',
+                symbolSize: data =>
+
+                {
+                    if (data[2] === 0 || Math.abs(data[2] - 0.066) < 0.0001)  {
+                        return 0;
+                    }
+
+                    if (data[2] < 1.4) {
+                        return Math.min(10, Math.max(2, data[2] * 7));
+                    } else if (data[2] < 1.7) {
+                        return Math.min(20, Math.max(10, 10 + ((data[2] - 1.4) / 0.3) * 10));
+                    } else if (data[2] < 1.875) {
+                        return Math.min(25, Math.max(20, 20 + ((data[2] - 1.7) / 0.175) * 5));
+                    } else {
+                        return Math.min(30, Math.max(25, 25 + ((data[2] - 1.875) / 0.125) * 5));
+                    }
+                },
+
+                data: [],
+                itemStyle: {
+                    // color: function(params) {
+                    //
+                    //   const increasedRatio = params.data[6] || 0;
+                    //   const decreasedRatio = params.data[7] || 0;
+                    //
+                    //
+                    //   const r = Math.round(increasedRatio * 255);
+                    //   const g = 0;
+                    //   const b = Math.round(decreasedRatio * 255);
+                    //
+                    //   return `rgb(${r}, ${g}, ${b})`;
+                    // },
+                    borderWidth: 0.8,
+                    borderColor: '#595959'
+                }
+            },
+            {
+                type: 'custom',
+                renderItem: function(params, api) {
+                    const rowIndex = params.dataIndex;
+                    const region = heartRegions[rowIndex];
+
+                    const regionColors = {
+                        'LV': '#FDF3F4',
+                        'IVS': '#FAEAE9',
+                        'RV': '#FBEEEF',
+                        'LA': '#F4F8FA',
+                        'IAS': '#EAF0F4',
+                        'RA': '#EEF4F8',
+                        'AV': '#F6F6ED',
+                        'MV': '#F6F9F3',
+                        'PV': '#EBF2EB',
+                        'TV': '#EFF5F4',
+                        'LCA': '#FAF3EF',
+                        'RCA': '#F9F5F4',
+                        'AA': '#FDF7F1',
+                        'PA': '#F3F0F6',
+                        'SVC': '#F8F6F9',
+                        'IVC': '#F8F1F7',
+                    };
+
+                    const backgroundColor = regionColors[region] || '#ededed';
+
+                    const yAxis = api.coord([0, rowIndex])[1];
+                    const xAxisStart = api.coord([0, 0])[0];
+                    const xAxisEnd = api.coord([clusterNames.length - 1, 0])[0];
+                    const offset = 10;
+                    const rowHeight = 31;
+
+                    return {
+                        type: 'rect',
+                        shape: {
+                            x: xAxisStart - offset,
+                            y: yAxis - rowHeight / 2,
+                            width: (xAxisEnd - xAxisStart) + (offset * 2),
+                            height: rowHeight
+                        },
+                        style: {
+                            fill: backgroundColor
+                        }
+                    };
+                },
+                data: Array.from({ length: heartRegions.length }, (_, i) => i),
+                silent: true,
+                z: -1
+            }
+        ];
+
+        const yAxisLabels = heartRegions.map(region => region);
+
+        heartRegions.forEach((region, regionIndex) => {
+            const regionDataMap = (allData[region] || []).reduce((map, row) => {
+                map[row['Cluster name']] = row;
+                return map;
+            }, {});
+
+            clusterNames.forEach((cluster, clusterIndex) => {
+                const rowData = regionDataMap[cluster] || {};
+
+                seriesData[0].data.push([
+                    clusterIndex, //
+                    regionIndex,  //
+                    parseFloat(rowData['Sum_original_ratios_log10']) || 0,
+                    parseFloat(rowData['Sum_number_log10']) || 0,
+                    rowData['Direction'] || 0,
+                    rowData['Cluster name'] || '',
+                    parseFloat(rowData['Increased_number_ratio']) || 0,
+                    parseFloat(rowData['Decreased_number_ratio']) || 0
+                ]);
+            });
+        });
+
+        const chartDom = document.getElementById('main');
+        const myChart = echarts.init(chartDom);
+
+        const option = {
+            backgroundColor: 'transparent',
+            tooltip: {
+                formatter: (params) => {
+                    const region = heartRegions[params.value[1]];
+                    const sumNumber = params.value[3];
+                    const sumRatio = params.value[2];
+                    const direction = params.value[4] === 0 ? 'Neutral' :
+                        params.value[4] > 0 ? 'Increased' : 'Decreased';
+                    const clusterName = params.value[5];
+                    const increasedRatio = params.value[6];
+                    const decreasedRatio = params.value[7];
+
+                    return `Region: ${region}<br/>
+                Cluster: ${clusterName}<br/>
+                Sum Ratio Log10: ${sumRatio.toFixed(3)}<br/>
+                Increased Number Ratio: ${(increasedRatio * 100).toFixed(1)}%<br/>
+                Decreased Number Ratio: ${(decreasedRatio * 100).toFixed(1)}%`;
+                },
+                textStyle: { fontFamily: 'calibri' }
+            },
+            grid: { left: '5%', right: '25%', top: '0%', bottom: '5%', height: '46.5%', width: '85%' },
+            xAxis: {
+                type: 'category',
+                data: clusterNames,
+                axisLabel: {
+                    interval: 0,
+                    rotate: 60,
+                    color: '#000',
+                    fontSize: 18,
+                    fontFamily: 'calibri',
+                    fontWeight: 'bold'
+                },
+                axisLine: {
+                    lineStyle: {
+                        color: '#000',
+                        width: 3
+                    }
+                },
+                axisTick: {
+                    lineStyle: {
+                        color: '#000',
+                        width: 2
+                    }
+                },
+                splitLine: { show: false }
+            },
+            yAxis: {
+                type: 'category',
+                data: yAxisLabels,
+                axisLine: {
+                    lineStyle: {
+                        width: 2,
+                        color: '#000'
+                    }
+                },
+                axisLabel: {
+                    color: '#000',
+                    fontFamily: 'calibri',
+                    fontWeight: 'bold',
+                    formatter: function (value) {
+                        return `{region|${value}}`;
+                    },
+                    rich: {
+                        region: {
+                            align: 'right',
+                            width: 80,
+                            fontSize: 16,
+                            fontWeight: 'bold',
+                            fontFamily: 'calibri',
+                        }
+                    }
+                },
+                axisTick: { lineStyle: { color: '#000' } },
+                splitLine: { show: false },
+            },
+            axisPointer: {
+                type: 'none'
+            },
+            boundaryGap: true,
+            series: seriesData,
+            visualMap: [
+                {
+                    show: true,
+                    type: 'continuous',
+                    min: 0,
+                    max: 1,
+                    calculable: false,
+                    dimension: 6,
+                    orient: 'vertical',
+                    right: '6%',
+                    top: '25%',
+                    seriesIndex: 0,
+                    inRange: {
+                        // color: ['#81769e', '#a7c5d0', '#508e54',
+                        //   '#c7c571', '#c65861', '#ba404b']
+                        color: [
+                            '#356994',
+                            '#ffff00',
+                            '#cb312c',
+                        ]
+                    },
+                    text: ['Increased', 'Decreased'],
+                    textStyle: { color: '#000', fontFamily: 'calibri', fontWeight: 'bold'  }
+                }
+            ],
+        };
+
+        myChart.setOption(option);
+        window.addEventListener('resize', () => myChart.resize());
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM loaded, creating charts...');
+        createCharts();
+    });
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        console.log('Document already ready, creating charts...');
+        createCharts();
+    }
+
+    const downloadBtn = document.createElement('button');
+    downloadBtn.innerHTML = 'Download';
+    downloadBtn.style.cssText = 'position:fixed; right:20px; top:20px; z-index:1000; padding:8px 15px;';
+    document.body.appendChild(downloadBtn);
+
+    downloadBtn.addEventListener('click', function() {
+        const mainChart = echarts.getInstanceByDom(document.getElementById('main'));
+        const barChart = echarts.getInstanceByDom(document.getElementById('barChart'));
+
+        const pixelRatio = 4;
+        const margin = 25;
+
+        const mainWidth = mainChart.getWidth();
+        const mainHeight = mainChart.getHeight();
+        const barWidth = barChart.getWidth();
+        const barHeight = barChart.getHeight();
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = (Math.max(mainWidth, barWidth) + margin * 2) * pixelRatio;
+        canvas.height = (mainHeight + barHeight + margin * 2) * pixelRatio;
+
+        ctx.scale(pixelRatio, pixelRatio);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const barURL = barChart.getDataURL({
+            pixelRatio: pixelRatio
+        });
+
+        const mainURL = mainChart.getDataURL({
+            pixelRatio: pixelRatio
+        });
+
+        const barImg = new Image();
+        const mainImg = new Image();
+
+        barImg.onload = function() {
+            ctx.drawImage(barImg, margin, margin, barWidth, barHeight);
+
+            mainImg.onload = function() {
+                ctx.drawImage(mainImg, margin, margin + barHeight, mainWidth, mainHeight);
+
+                const link = document.createElement('a');
+                link.download = 'combined_chart.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            };
+            mainImg.src = mainURL;
+        };
+        barImg.src = barURL;
+    });
+
+</script>
+</body>
+</html>
