@@ -6,11 +6,47 @@ Welcome to the Human_heart_metabolome_atlas project’s GitHub repository!
 
 This repository contains all the open source code used to generate the visualizations and data analysis in this article.
 
-### Figue 1
+Our data visualization codes are all based on open source Javascript and R packages.
 
-### Figure 2
+### Figue 1 Upset Plot
 
-### Figure 3
+**Used R packages:**
+
+- **ComplexUpset**: For generating the primary UpSet plot structure
+- **ggplot2**: For additional aesthetic customizations and annotations
+- **dplyr**: For data manipulation prior to visualization
+
+### Figure 2 t-SNE Plot
+
+**Used R package:**
+
+- **Rtsne**: For implementing the t-SNE algorithm
+
+### Figure 3a t-SNE Plot
+
+**Used R package:**
+
+- **Rtsne**: For implementing the t-SNE algorithm
+
+### Figure 3c Chord Diagram
+
+**Used R package:**
+
+- **circlize**: For creating the chord diagram
+- **RColorBrewer**: For color scheme selection
+- **dplyr**: For data preparation
+
+**Method of packages installation:**
+
+```R
+install.packages("ComplexUpset")
+install.packages("ggplot2")
+install.packages("Rtsne")
+install.packages("circlize")
+install.packages("RColorBrewer")
+install.packages("viridis")
+install.packages("dplyr")
+```
 
 ### Figure 4 Bubble Plot
 
