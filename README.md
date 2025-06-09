@@ -62,4 +62,4 @@ python -m http.server 8000
 
 Then access it through your browser `http://localhost:8000/Bubble_Plot.html`
 
-**Please note ECharts dependencies**: ECharts is a JavaScript library and usually does not require complex installation steps like Python (such as Conda or pip). It is usually introduced through CDN or directly download .js files. You can place the minimal core file of ECharts in the directory, or use the CDN link in the HTML.
+**Please note ECharts dependencies**: ECharts is a JavaScript library and does not require complex installation steps like Python (such as Conda or pip). It is usually introduced through CDN or directly download .js files. You can place the minimal core file of ECharts in the directory, or use the CDN link in the HTML.
