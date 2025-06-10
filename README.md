@@ -1,29 +1,46 @@
 # Human_heart_metabolome_atlas
 
-## Visualization Code Overview
+## Overview
 
-Welcome to the Human_heart_metabolome_atlas project’s GitHub repository! 
+Welcome to the Human_heart_metabolome_atlas project's GitHub repository! 
 
-This repository contains all the open source code used to generate the visualizations and data analysis in this article.
+This repository contains all the open source code for data visualizations and data analysis in this article.
 
-### Figue 1
+Our data visualization codes are all based on open source Javascript and R packages.
 
-### Figure 2
+### Figures 
 
-### Figure 3
+Scripts for UpSet plot, t-SNE plot, chord diagram and bubble plot in this article.
 
-### Figure 4 Bubble Plot
+### Web-app
 
-Our Bubble Plots are developed in part using Apache ECharts, a powerful open source JavaScript-based visualization library. These charts provide interactivity, allowing users to explore data.
+The code and demo data for the interactive web tool in this article.
 
-To view and run ECharts related charts, please follow the steps below:
 
-Open HTML file: ECharts charts are generated as independent HTML files, which contain all necessary JavaScript codes. You can open these HTML files directly in the browser. Or, if you are using a local server (such as Python's http.server), you can run this in your terminal:
 
-```bash
-python -m http.server 8000
-```
+## System Requirements
 
-Then access it through your browser `http://localhost:8000/Bubble_Plot.html`
+### Hardware requirements
 
-**Please note ECharts dependencies**: ECharts is a JavaScript library and usually does not require complex installation steps like Python (such as Conda or pip). It is usually introduced through CDN or directly download .js files. You can place the minimal core file of ECharts in the directory, or use the CDN link in the HTML.
+A standard computer with enough RAM to support the in-memory operations is required .
+
+### OS Requirements
+
+This package is supported for Windows and Linux operating system. The package has been tested on the following systems:
+
+- Windows: Windows 10
+- Linux: Linux Mint 21
+
+### Software requirements
+
+- R: R version 4.4 
+- Python: Python version  > 3.7
+
+
+
+
+
+
+
+
+
