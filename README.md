@@ -35,12 +35,3 @@ This package is supported for Windows and Linux operating system. The package ha
 
 - R: R version 4.4 
 - Python: Python version  > 3.7
-
-
-
-
-
-
-
-
-
